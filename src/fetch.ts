@@ -49,11 +49,13 @@ export function createFetchMiddleware({
   fetch,
   rpcUrl,
   originHttpHeaderKey,
+  fetchOptions,
 }: {
   btoa: (stringToEncode: string) => string;
   fetch: typeof global.fetch;
   rpcUrl: string;
   originHttpHeaderKey?: string;
+  fetchOptions: Exclude<RequestInit, Request>;
 }): JsonRpcMiddleware<unknown, unknown> {
   return createAsyncMiddleware(async (req, res, _next) => {
     const { fetchUrl, fetchParams } = createFetchConfigFromReq({
@@ -68,8 +70,12 @@ export function createFetchMiddleware({
     const retryInterval = 1000;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
-        const fetchRes = await fetch(fetchUrl, fetchParams);
-        // check for http errrors
+        const fetchRes = await fetch(fetchUrl, {
+          ...fetchOptions,
+          ...fetchParams,
+        });
+
+        // check for http errors
         checkForHttpErrors(fetchRes);
         // parse response body
         const rawBody: string = await fetchRes.text();
